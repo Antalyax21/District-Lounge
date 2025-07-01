@@ -1,0 +1,16 @@
+{
+    "name": "codez/district-lounge",
+    "description": "projet personnel, site d'un restaurant fictif",
+    "autoload": {
+        "psr-4": {
+            "Codez\\DistrictLounge\\": "app/",
+            "Codez\\DistrictLounge\\Core\\": "core/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Antalyax21"
+        }
+    ],
+    "require": {}
+}
