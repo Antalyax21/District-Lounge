@@ -1,11 +1,7 @@
 <?php
-require_once '../vendor/autoload.php';
+require_once '../core/init.php';
 
 use Codez\DistrictLounge\Controllers\HomeController;
-
-$controller = new HomeController();
-$controller->index();
-
 use Codez\DistrictLounge\Core\Database;
 
 try {
@@ -14,3 +10,6 @@ try {
 } catch (Exception $e) {
     echo "Erreur : " . $e->getMessage();
 }
+
+$controller = new HomeController();
+$controller->index();
