@@ -1,79 +1,65 @@
 <?php
 
-require 'config.php';
+namespace Codez\DistrictLounge\Core;
 
-class Router
+class Routeur
 {
     public function routeRequest()
     {
-        $url = isset($_GET['url']) ? $_GET['url'] : '/';
+        $url = $_GET['url'] ?? '/';
         $urlParts = explode('/', trim($url, '/'));
 
-        // Validation simple pour éviter l'injection dans le nom du contrôleur et de l'action
+        // Nettoyage des segments pour éviter les injections
         $controllerSegment = preg_replace('/[^a-zA-Z0-9]/', '', $urlParts[0] ?? '');
         $methodSegment = preg_replace('/[^a-zA-Z0-9]/', '', $urlParts[1] ?? '');
 
+        // Détermination du nom de classe et de méthode
         $controllerName = !empty($controllerSegment) ? ucfirst($controllerSegment) . 'Controller' : 'HomeController';
         $action = !empty($methodSegment) ? $methodSegment : 'index';
 
-        $controllerPath = 'Controllers/' . $controllerName . '.php';
+        // Namespace complet du contrôleur
+        $fullControllerClass = "Codez\\DistrictLounge\\Controllers\\$controllerName";
 
-        if (!file_exists($controllerPath)) {
+
+        // Vérification si la classe existe via l'autoloading de Composer
+        if (!class_exists($fullControllerClass)) {
             http_response_code(404);
-            // Affiche une page d’erreur générique ou redirige vers une page 404
-            include 'views/errors/404.php';
-            // Loguer l’erreur pour analyse interne
-            error_log("Contrôleur non trouvé : $controllerPath");
+            include __DIR__ . '/../app/Views/errors/404.php'; // adapte le chemin si nécessaire
+            error_log("Contrôleur non trouvé : $fullControllerClass");
             return;
         }
+        // Instanciation du contrôleur
 
-
-        require_once($controllerPath);
-// includ 404 au lieu de echo 
-        if (!class_exists($controllerName)) {
-            http_response_code(404);
-            echo "Erreur 404 - Classe non trouvée!";
-            return;
-        }
-
-        $controller = new $controllerName();
-
-        // Récupération de la méthode HTTP (GET, POST, etc.)
+        $controller = new $fullControllerClass();
         $httpMethod = $_SERVER['REQUEST_METHOD'];
-        $actionMethod = $action . ucfirst(strtolower($httpMethod));
+       $actionMethod = $action . ($httpMethod === 'GET' ? '' : ucfirst(strtolower($httpMethod)));
 
-        // Récupération des paramètres supplémentaires passés dans l'URL
+
+        echo "Contrôleur : $fullControllerClass - Méthode : $action / $actionMethod";
+
+
+
         $params = array_slice($urlParts, 2);
 
-        // Vérification avec Reflection de la méthode à appeler
         if (method_exists($controller, $actionMethod)) {
-            $reflectionMethod = new ReflectionMethod($controller, $actionMethod);
-            $methodParams = $reflectionMethod->getParameters();
+            $reflection = new \ReflectionMethod($controller, $actionMethod);
+            $requiredParams = $reflection->getNumberOfRequiredParameters();
 
-            if (count($methodParams) > 0) {
-                if (count($params) >= count($methodParams)) {
-                    call_user_func_array([$controller, $actionMethod], $params);
-                } else {
-                    http_response_code(404);
-                    echo "Erreur 404 - Paramètres insuffisants pour la méthode!";
-                }
+            if (count($params) >= $requiredParams) {
+                call_user_func_array([$controller, $actionMethod], $params);
             } else {
-                $controller->$actionMethod();
+                http_response_code(404);
+                echo "Erreur 404 - Paramètres insuffisants pour la méthode!";
             }
         } elseif (method_exists($controller, $action)) {
-            // Fallback : méthode sans distinction HTTP
-            $reflectionMethod = new ReflectionMethod($controller, $action);
-            $methodParams = $reflectionMethod->getParameters();
+            $reflection = new \ReflectionMethod($controller, $action);
+            $requiredParams = $reflection->getNumberOfRequiredParameters();
 
-            if (count($methodParams) > 0) {
-                if (count($params) >= count($methodParams)) {
-                    call_user_func_array([$controller, $action], $params);
-                } else {
-                    http_response_code(404);
-                    echo "Erreur 404 - Paramètres insuffisants pour la méthode!";
-                }
+            if (count($params) >= $requiredParams) {
+                call_user_func_array([$controller, $action], $params);
             } else {
-                $controller->$action();
+                http_response_code(404);
+                echo "Erreur 404 - Paramètres insuffisants pour la méthode!";
             }
         } else {
             http_response_code(404);

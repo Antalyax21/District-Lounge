@@ -86,8 +86,9 @@ class DAO
             $stmt = $this->connect()->prepare($sql);
             return $stmt->execute(array_values($data));
         } catch (PDOException $e) {
-            return false;
-        }
+    die("Erreur SQL : " . $e->getMessage()); // Ajout temporaire pour debug
+}
+
     }
 
     public function update($table, $data, $where, $params = array())
