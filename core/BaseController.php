@@ -41,7 +41,7 @@ abstract class BaseController
             $_SESSION['type_libelle'] = getUserType($user['type_id']);
             $_SESSION['logged_in'] = true;
            
-            // ✅ Mettre à jour les données d'authentification après connexion
+            // mettre à jour les données d'authentification après connexion
             updateAuthData();
         }
     }
